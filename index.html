@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+
+    <form>
+        <input type="text" class="todoText">
+        <input type="submit">
+    </form>
+
+    <div class="todo_list"></div>
+
+    <script src="./redux.js"></script>
+
+    <script>
+        const ADD_TODO = "ADD_TODO";
+        const REMOVE_TODO = "REMOVE_TODO";
+        const TOGGLE_TODO = "TOGGLE_TODO";
+
+        const ADD_GOAL = "ADD_GOAL";
+        const REMOVE_GOAL = "REMOVE_GOAL";
+
+        function todos(state = [], action) {
+            switch (action.type) {
+                case ADD_TODO:
+                    return state.concat(action.todo);
+                case REMOVE_TODO:
+                    return state.filter((todo) => todo.id !== action.id);
+                case TOGGLE_TODO:
+                    const tempTodo = state.find((todo) => todo.id === action.id);
+                    tempTodo.completed = !tempTodo.completed;
+                    return [...state];
+                default:
+                    return state;
+            }
+        }
+
+        function goals(state = [], action) {
+            switch (action.type) {
+                case ADD_GOAL:
+                    return state.concat(action.goal);
+                case REMOVE_GOAL:
+                    return state.filter((goal) => goal.id !== action.id);
+                default:
+                    return state;
+            }
+        }
+
+        function app(state = {}, action) {
+            return {
+                todos: todos(state.todos, action),
+                goals: goals(state.goals, action),
+            };
+        }
+
+        let count = 1;
+
+        const store = new CreateStore(app);
+
+        const unsubs = store.subscribe(() => {
+            console.log(store.state);
+        });
+
+        const form = document.querySelector("form");
+        const todoText = document.querySelector(".todoText");
+        const todoContainer = document.querySelector(".todo_list");
+
+        function displayTodos() {
+            todoContainer.innerHTML = "";
+
+            let html = "<div>";
+
+            for (const todo of store.state.todos) {
+
+                html += '<div>'
+
+                if (todo.completed) {
+                    html += `<del>${todo.text}</del>`;
+                } else {
+                    html += `<div>
+                        ${todo.text}
+                    </div>`;
+                }
+
+                html += `<div>                    
+                    <div><button data-todo=${todo.id} class="todoDelete">Delete</button>
+                    <button data-todo=${todo.id} class="todoComplete">Done</button></div>
+                </div>`;
+            }
+
+            html += "</div>";
+
+            todoContainer.insertAdjacentHTML("beforeend", html);
+        }
+
+        store.subscribe(displayTodos);
+
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            store.dispatch({
+                type: ADD_TODO,
+                todo: {
+                    id: count++,
+                    text: todoText.value,
+                    completed: false,
+                }
+            })
+            todoText.value = "";
+        });
+
+        todoContainer.addEventListener("click", function (e) {
+            const elem = e.target;
+            if (elem.classList.contains("todoDelete")) {
+                store.dispatch({
+                    type: REMOVE_TODO,
+                    id: Number.parseInt(elem.dataset.todo)
+                });
+            }
+
+            if (elem.classList.contains("todoComplete")) {
+                store.dispatch({
+                    type: TOGGLE_TODO,
+                    id: Number.parseInt(elem.dataset.todo)
+                });
+            }
+        });
+
+
+    </script>
+</body>
+
+</html>
