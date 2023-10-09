@@ -1,7 +1,7 @@
 class CreateStore {
   constructor(reducer) {
     this.reducer = reducer;
-    this.state = {};
+    this.state = undefined;
     this.listeners = [];
   }
 

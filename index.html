@@ -1,140 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-</head>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.2.1/redux.min.js"
+      integrity="sha512-1/8Tj23BRrWnKZXeBruk6wTnsMJbi/lJsk9bsRgVwb6j5q39n0A00gFjbCTaDo5l5XrPVv4DZXftrJExhRF/Ug=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
 
-<body>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    ></script>
 
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
 
+  <body>
     <form>
-        <input type="text" class="todoText">
-        <input type="submit">
+      <input type="text" class="todoText" />
+      <input type="submit" />
     </form>
 
     <div class="todo_list"></div>
 
-    <script src="./redux.js"></script>
+    <hr />
+
+    <div id="app"></div>
+
+    <!-- <script src="./redux.js"></script> -->
 
     <script>
-        const ADD_TODO = "ADD_TODO";
-        const REMOVE_TODO = "REMOVE_TODO";
-        const TOGGLE_TODO = "TOGGLE_TODO";
+      const ADD_TODO = "ADD_TODO";
+      const REMOVE_TODO = "REMOVE_TODO";
+      const TOGGLE_TODO = "TOGGLE_TODO";
 
-        const ADD_GOAL = "ADD_GOAL";
-        const REMOVE_GOAL = "REMOVE_GOAL";
+      const ADD_GOAL = "ADD_GOAL";
+      const REMOVE_GOAL = "REMOVE_GOAL";
 
-        function todos(state = [], action) {
-            switch (action.type) {
-                case ADD_TODO:
-                    return state.concat(action.todo);
-                case REMOVE_TODO:
-                    return state.filter((todo) => todo.id !== action.id);
-                case TOGGLE_TODO:
-                    const tempTodo = state.find((todo) => todo.id === action.id);
-                    tempTodo.completed = !tempTodo.completed;
-                    return [...state];
-                default:
-                    return state;
-            }
+      function logger(store) {
+        return function (next) {
+          return function (action) {
+            console.group(action);
+            console.groupEnd();
+            next(action);
+          };
+        };
+      }
+
+      function todos(state = [], action) {
+        switch (action.type) {
+          case ADD_TODO:
+            return state.concat(action.todo);
+          case REMOVE_TODO:
+            return state.filter((todo) => todo.id !== action.id);
+          case TOGGLE_TODO:
+            const tempTodo = state.find((todo) => todo.id === action.id);
+            tempTodo.completed = !tempTodo.completed;
+            return [...state];
+          default:
+            return state;
         }
+      }
 
-        function goals(state = [], action) {
-            switch (action.type) {
-                case ADD_GOAL:
-                    return state.concat(action.goal);
-                case REMOVE_GOAL:
-                    return state.filter((goal) => goal.id !== action.id);
-                default:
-                    return state;
-            }
+      function goals(state = [], action) {
+        switch (action.type) {
+          case ADD_GOAL:
+            return state.concat(action.goal);
+          case REMOVE_GOAL:
+            return state.filter((goal) => goal.id !== action.id);
+          default:
+            return state;
         }
+      }
 
-        function app(state = {}, action) {
-            return {
-                todos: todos(state.todos, action),
-                goals: goals(state.goals, action),
-            };
-        }
+      function app(state = {}, action) {
+        return {
+          todos: todos(state.todos, action),
+          goals: goals(state.goals, action),
+        };
+      }
 
-        let count = 1;
+      let count = 1;
 
-        const store = new CreateStore(app);
+      const store = Redux.createStore(
+        Redux.combineReducers({
+          todos,
+          goals,
+        }),
+        Redux.applyMiddleware(logger)
+      );
 
-        const unsubs = store.subscribe(() => {
-            console.log(store.state);
-        });
+      console.log(store.state);
 
-        const form = document.querySelector("form");
-        const todoText = document.querySelector(".todoText");
-        const todoContainer = document.querySelector(".todo_list");
+      const unsubs = store.subscribe(() => {
+        console.log(store.state);
+      });
 
-        function displayTodos() {
-            todoContainer.innerHTML = "";
+      const form = document.querySelector("form");
+      const todoText = document.querySelector(".todoText");
+      const todoContainer = document.querySelector(".todo_list");
 
-            let html = "<div>";
+      function displayTodos() {
+        todoContainer.innerHTML = "";
 
-            for (const todo of store.state.todos) {
+        let html = "<div>";
 
-                html += '<div>'
+        for (const todo of store.getState().todos) {
+          html += "<div>";
 
-                if (todo.completed) {
-                    html += `<del>${todo.text}</del>`;
-                } else {
-                    html += `<div>
+          if (todo.completed) {
+            html += `<del>${todo.text}</del>`;
+          } else {
+            html += `<div>
                         ${todo.text}
                     </div>`;
-                }
+          }
 
-                html += `<div>                    
+          html += `<div>                    
                     <div><button data-todo=${todo.id} class="todoDelete">Delete</button>
                     <button data-todo=${todo.id} class="todoComplete">Done</button></div>
                 </div>`;
-            }
-
-            html += "</div>";
-
-            todoContainer.insertAdjacentHTML("beforeend", html);
         }
 
-        store.subscribe(displayTodos);
+        html += "</div>";
 
-        form.addEventListener("submit", function (e) {
-            e.preventDefault();
-            store.dispatch({
-                type: ADD_TODO,
-                todo: {
-                    id: count++,
-                    text: todoText.value,
-                    completed: false,
-                }
-            })
-            todoText.value = "";
+        todoContainer.insertAdjacentHTML("beforeend", html);
+      }
+
+      store.subscribe(displayTodos);
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        store.dispatch({
+          type: ADD_TODO,
+          todo: {
+            id: count++,
+            text: todoText.value,
+            completed: false,
+          },
         });
+        todoText.value = "";
+      });
 
-        todoContainer.addEventListener("click", function (e) {
-            const elem = e.target;
-            if (elem.classList.contains("todoDelete")) {
-                store.dispatch({
-                    type: REMOVE_TODO,
-                    id: Number.parseInt(elem.dataset.todo)
-                });
-            }
+      todoContainer.addEventListener("click", function (e) {
+        const elem = e.target;
+        if (elem.classList.contains("todoDelete")) {
+          store.dispatch({
+            type: REMOVE_TODO,
+            id: Number.parseInt(elem.dataset.todo),
+          });
+        }
 
-            if (elem.classList.contains("todoComplete")) {
-                store.dispatch({
-                    type: TOGGLE_TODO,
-                    id: Number.parseInt(elem.dataset.todo)
-                });
-            }
-        });
-
-
+        if (elem.classList.contains("todoComplete")) {
+          store.dispatch({
+            type: TOGGLE_TODO,
+            id: Number.parseInt(elem.dataset.todo),
+          });
+        }
+      });
     </script>
-</body>
 
+    <!--  -->
+  </body>
 </html>
